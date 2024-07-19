@@ -12,6 +12,7 @@ demoji = "*"
 textblob = "*"
 langdetect = "*"
 flask-cors = "*"
+python-dotenv = "*"
 
 [dev-packages]
 
