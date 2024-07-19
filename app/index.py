@@ -4,7 +4,8 @@ from app.yt import getChannels, getChannelDetails, getRawComments
 from app.sentiments import getSentimentScores
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=['https://frontend-yt-analysis.onrender.com',
+     'https://analysis.utkarshuday.com'])
 
 
 @app.route('/')
