@@ -1,7 +1,8 @@
 from googleapiclient.discovery import build
 import pandas as pd
+import os
 
-API_KEY = 'AIzaSyBwmm2uzFNzGAhp6pN1LDtlXKVjzauiyUw'
+API_KEY = os.environ['API_KEY']
 api_service_name = "youtube"
 api_version = "v3"
 youtube = build(api_service_name, api_version, developerKey=API_KEY)
