@@ -1,7 +1,7 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
-from yt import getChannels, getChannelDetails, getRawComments
-from sentiments import getSentimentScores
+from app.yt import getChannels, getChannelDetails, getRawComments
+from app.sentiments import getSentimentScores
 
 app = Flask(__name__)
 CORS(app)
@@ -32,6 +32,3 @@ def get_sentiment_analysis(videoId):
   result = getSentimentScores(comments, videoId)
   print(f'Sending response for videoId {videoId} ...')
   return jsonify(result)
-
-
-app.run()

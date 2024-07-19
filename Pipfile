@@ -13,6 +13,7 @@ textblob = "*"
 langdetect = "*"
 flask-cors = "*"
 python-dotenv = "*"
+gunicorn = "*"
 
 [dev-packages]
 
