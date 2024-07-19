@@ -7,6 +7,11 @@ app = Flask(__name__)
 CORS(app)
 
 
+@app.route('/')
+def get_home_page():
+  return '<h1>Youtube Analysis</h1>'
+
+
 @app.route("/channels/<string:name>")
 def get_searched_channel(name):
   channels = getChannels(name)
