@@ -47,7 +47,6 @@ Ensure you have the following installed on your system:
 ## Project Structure
 
 - `app/`: Contains the Flask application code.
-- `frontend/`: Contains the React frontend code.
 - `.env`: Environment file containing the YouTube Data API key.
 
 ## License
