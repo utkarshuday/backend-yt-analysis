@@ -28,6 +28,8 @@ def get_channel_details(id):
 def get_sentiment_analysis(videoId):
   print(f'Started process for videoId {videoId} ...')
   comments = getRawComments(videoId)
+  if isinstance(comments, dict) and comments.get('error'):
+    return jsonify(comments.get('message', {'message': 'Error occurred'}))
   print(f'Collected comments from API for videoId {videoId} ...')
   result = getSentimentScores(comments, videoId)
   print(f'Sending response for videoId {videoId} ...')
