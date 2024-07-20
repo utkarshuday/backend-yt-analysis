@@ -14,7 +14,6 @@ langdetect = "*"
 flask-cors = "*"
 python-dotenv = "*"
 gunicorn = "*"
-waitress = "*"
 
 [dev-packages]
 
