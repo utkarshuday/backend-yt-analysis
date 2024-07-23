@@ -46,8 +46,8 @@ sentiment_ranges = {
 
 def getSentimentScores(comments, videoId):
 
-  comments = clean_comments(comments)
-  print(f'Cleaning commments for videoId {videoId} ...')
+  # comments = clean_comments(comments)
+  # print(f'Cleaning commments for videoId {videoId} ...')
 
   sentiment_counts = {
       'veryPositive': 0,
