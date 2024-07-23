@@ -154,7 +154,7 @@ def getRawComments(videoId):
           part='snippet',
           videoId=videoId,
           textFormat='plainText',
-          maxResults=3,
+          maxResults=100,
           pageToken=next_page_token
       ).execute()
 
