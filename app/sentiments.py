@@ -8,6 +8,33 @@ import re
 DetectorFactory.seed = 0
 
 
+# def replace_emojis(text):
+#   return demoji.replace_with_desc(text, sep=" ")
+
+
+# def remove_colons_and_numbers(text):
+#   pattern = r'[:\d]'
+#   return re.sub(pattern, '', text)
+
+
+# def is_english(text):
+#   try:
+#     if detect(text) == 'en':
+#       return text
+#     return np.nan
+#   except:
+#     return np.nan
+
+
+# def clean_comments(comments):
+#   df = pd.DataFrame(comments).drop_duplicates()
+#   df[0] = df[0].apply(replace_emojis).apply(
+#       remove_colons_and_numbers).apply(is_english)
+#   df = df.dropna()
+#   comments = df[0].tolist()
+#   return comments
+
+
 def replace_emojis(text):
   return demoji.replace_with_desc(text, sep=" ")
 
@@ -27,12 +54,21 @@ def is_english(text):
 
 
 def clean_comments(comments):
-  df = pd.DataFrame(comments).drop_duplicates()
-  df[0] = df[0].apply(replace_emojis).apply(
-      remove_colons_and_numbers).apply(is_english)
-  df = df.dropna()
-  comments = df[0].tolist()
-  return comments
+  # Convert the list of comments to a pandas Series
+  comments_series = pd.Series(comments).drop_duplicates()
+
+  # Apply the cleaning functions using vectorized operations
+  comments_series = comments_series.apply(replace_emojis)
+  comments_series = comments_series.apply(remove_colons_and_numbers)
+  comments_series = comments_series.apply(is_english)
+
+  # Drop any NaN values
+  comments_series = comments_series.dropna()
+
+  # Convert the cleaned Series back to a list
+  cleaned_comments = comments_series.tolist()
+
+  return cleaned_comments
 
 
 sentiment_ranges = {
@@ -46,8 +82,8 @@ sentiment_ranges = {
 
 def getSentimentScores(comments, videoId):
 
-  # comments = clean_comments(comments)
-  # print(f'Cleaning commments for videoId {videoId} ...')
+  comments = clean_comments(comments)
+  print(f'Cleaned commments for videoId {videoId} ...')
 
   sentiment_counts = {
       'veryPositive': 0,
