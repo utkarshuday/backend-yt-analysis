@@ -1,18 +1,10 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 from app.yt import getChannels, getChannelDetails, getRawComments
-from celery import Celery
+from app.tasks import background_task, celery, redis_client
 import celery.states as states
-import os
+import json
 
-host = os.environ['UPSTASH_REDIS_HOST']
-password = os.environ['UPSTASH_REDIS_PASSWORD']
-port = os.environ['UPSTASH_REDIS_PORT']
-connection_link = "rediss://:{}@{}:{}?ssl_cert_reqs=CERT_REQUIRED".format(
-    password, host, port)
-
-celery = Celery('tasks', backend='redis://localhost:6379',
-                broker='redis://localhost:6379', result_expires=60 * 60 * 16)
 
 app = Flask(__name__)
 CORS(app)
@@ -38,11 +30,15 @@ def get_channel_details(id):
 @app.route('/sentiments/<string:videoId>')
 def get_sentiment_analysis(videoId):
   print(f'Started process for videoId {videoId} ...')
+  cached_result = redis_client.get(videoId)
+  if cached_result:
+    print(f'Returning cached result for videoId {videoId} ...')
+    return jsonify(json.loads(cached_result))
   comments = getRawComments(videoId)
   if isinstance(comments, dict) and comments.get('error'):
     return jsonify(comments.get('message', {'message': 'Error occurred'}))
   print(f'Collected comments from API for videoId {videoId} ...')
-  task = celery.send_task('tasks.sentiment_scores', args=[comments, videoId])
+  task = background_task.delay(comments, videoId)
   print(f'Sending response for videoId {videoId} ...')
   return jsonify({'id': task.id})
 
