@@ -1,5 +1,6 @@
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from app.errors import YouTubeQuotaExceededError, APIRequestError
 import pandas as pd
 import os
 
@@ -13,18 +14,13 @@ def processError(e):
   if e.resp.status == 403:
     error_message = e.content.decode("utf-8")
     if "quota" in error_message.lower():
-      return {"message": "API Quota Exceeded. Cannot make further requests"}
-    else:
-      print(f"API error: {error_message}")
-  else:
-    print(f"HTTP error: {e.resp.status}")
-  return None
+      raise YouTubeQuotaExceededError(
+          "API Quota Exceeded. Cannot make further requests")
+  raise APIRequestError("API request failed")
 
 
 def getChannels(name):
   channels = []
-  if not name:
-    return channels
   try:
     request = youtube.search().list(
         part="snippet",
@@ -40,35 +36,32 @@ def getChannels(name):
       channels.append(channel)
     return channels
   except HttpError as e:
-    return processError(e)
+    processError(e)
+  except Exception:
+    raise
 
 
-def getVideoIds(playlistId):
+def getVideoIds(channelId):
   try:
-    request = youtube.playlistItems().list(
-        part="contentDetails",
-        playlistId=playlistId,
-        maxResults=50
+    request = youtube.search().list(
+        part="id",
+        channelId=channelId,
+        maxResults=50,
+        order="viewCount",
+        type="video"
     )
     response = request.execute()
     video_ids = []
-    for i in range(len(response.get('items'))):
-      video_ids.append(response.get('items')[i]["contentDetails"]['videoId'])
-    next_page_token = response.get('nextPageToken')
-    while next_page_token != None:
-      request = youtube.playlistItems().list(
-          part="contentDetails",
-          playlistId=playlistId,
-          maxResults=50,
-          pageToken=next_page_token)
-      response = request.execute()
-      for i in range(len(response.get('items'))):
-        video_ids.append(response.get('items')[
-            i]["contentDetails"]['videoId'])
-      next_page_token = response.get('nextPageToken')
+    items = response.get('items')
+    for item in items:
+      video_ids.append(item['id']['videoId'])
     return video_ids
   except HttpError as e:
-    return processError(e)
+    processError(e)
+  except Exception:
+    raise
+
+# getVideoIds('UC0rE2qq81of4fojo-KhO5rg')
 
 
 def getVideoDetails(videoIds):
@@ -92,6 +85,8 @@ def getVideoDetails(videoIds):
     return videoDetails
   except HttpError as e:
     return processError(e)
+  except Exception:
+    raise
 
 
 def getChannelDetails(id):
@@ -112,9 +107,7 @@ def getChannelDetails(id):
                 videoCount=int(item['statistics']['videoCount']),
                 playlistId=response['items'][0]['contentDetails']['relatedPlaylists']['uploads'])
 
-    videoIds = getVideoIds(data['playlistId'])
-    if isinstance(videoIds, dict) and videoIds.get('error'):
-      return videoIds.get('message', {'message': 'Error occurred'})
+    videoIds = getVideoIds(data['channelId'])
     videoDetails = getVideoDetails(videoIds)
     df = pd.DataFrame(videoDetails)
     df['views'] = pd.to_numeric(df['views'])
@@ -130,7 +123,9 @@ def getChannelDetails(id):
     data['videoDetails'] = sorted_videoDetails
     return data
   except HttpError as e:
-    return processError(e)
+    processError(e)
+  except Exception:
+    raise
 
 
 def getRawComments(videoId):
@@ -162,7 +157,8 @@ def getRawComments(videoId):
         comments.append(response.get('items')[
             i]['snippet']['topLevelComment']['snippet']['textDisplay'])
       next_page_token = response.get('nextPageToken')
-
     return comments
   except HttpError as e:
-    return {"error": True,  "message": processError(e)}
+    processError(e)
+  except Exception:
+    raise
