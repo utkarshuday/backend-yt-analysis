@@ -3,12 +3,12 @@ from flask_cors import CORS
 from app.yt import getChannels, getChannelDetails, getRawComments
 from app.tasks import background_task, celery, redis_client
 from app.errors import YouTubeQuotaExceededError, APIRequestError
-import celery.states as states
 import json
+import os
 
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=[os.environ['CLIENT_URL']])
 
 
 @app.errorhandler(YouTubeQuotaExceededError)
@@ -58,7 +58,12 @@ def get_searched_channel(name):
 @app.route("/channel-details/<string:id>")
 def get_channel_details(id):
   try:
+    cached_result = redis_client.get(id)
+    if cached_result:
+      print(f'Returning cached result for channelId {id} ...')
+      return jsonify(json.loads(cached_result))
     details = getChannelDetails(id)
+    redis_client.set(id, json.dumps(details), ex=60 * 60 * 16)
     return jsonify(details)
   except:
     raise
@@ -71,12 +76,12 @@ def get_sentiment_analysis(videoId):
     cached_result = redis_client.get(videoId)
     if cached_result:
       print(f'Returning cached result for videoId {videoId} ...')
-      return jsonify(json.loads(cached_result))
+      return jsonify({'result': json.loads(cached_result), 'state': 'SUCCESS'})
     comments = getRawComments(videoId)
     print(f'Collected comments from API for videoId {videoId} ...')
     task = background_task.delay(comments, videoId)
-    print(f'Sending response for videoId {videoId} ...')
-    return jsonify({'id': task.id})
+    print(task)
+    return jsonify({'id': task.id, 'state': 'PENDING'})
   except:
     raise
 
@@ -84,10 +89,26 @@ def get_sentiment_analysis(videoId):
 @app.route('/check/<string:task_id>')
 def get_result(task_id):
   try:
-    res = celery.AsyncResult(task_id)
-    if res.state == states.PENDING:
-      return res.state
+    i = celery.control.inspect()
+    availability = i.ping()
+    if not availability:
+      raise Exception('Worker is down')
+    task = celery.AsyncResult(task_id)
+    if task.state == 'PENDING':
+      response = {
+          'state': task.state,
+          'status': 'Pending...'
+      }
+    elif task.state != 'FAILURE':
+      response = {
+          'state': task.state,
+          'result': task.result,
+      }
     else:
-      return jsonify(res.result)
+      response = {
+          'state': task.state,
+          'status': str(task.info)
+      }
+    return jsonify(response)
   except:
     raise
