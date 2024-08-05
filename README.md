@@ -48,7 +48,7 @@ Ensure you have the following installed on your system:
 ## Project Structure
 
 - `app/`: Contains the Flask application code.
-- `.env`: Environment file containing the YouTube Data API key.
+- `.env`: Environment file containing the YouTube Data API key and client URL.
 
 ## License
 
