@@ -28,6 +28,7 @@ Ensure you have the following installed on your system:
 
     ```plaintext
     API_KEY=your_api_key_here
+    CLIENT_URL=your_client_url
     ```
 
 ## Running the Application
